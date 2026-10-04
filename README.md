@@ -27,6 +27,6 @@ docker run -d -p 8080:80 --name my-web my-devops-app
 * http://localhost:8080
 * Enter container: docker exec -it my-web /bin/sh
 
-## Screenshotes
+## Screenshots
 ![Browser](./Screenshotes/Br.png)
 ![Bash](./Screenshotes/bash.png)
