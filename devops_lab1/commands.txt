@@ -1,0 +1,5 @@
+docker images
+docker run -d -p 8080:80 --name my-web my-devops-app
+docker ps
+docker exec -it my-web /bin/sh
+ls /usr/share/nginx/html/
