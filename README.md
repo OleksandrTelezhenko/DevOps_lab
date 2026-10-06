@@ -1,32 +1,30 @@
-# DevOps Lab 1 — Dockerized Nginx App
+# DevOps Lab 2 — Volumes & Networks
 
-## Files
-
-* `Dockerfile`
-* `index.html`
-* `commands.txt`
-
-## Dockerfile
-
-```dockerfile
-FROM nginx:alpine
-COPY index.html /usr/share/nginx/html/
-```
+Flask app (`my-container`) connects to Redis (`my-db`) by container name over a custom network (`my-network`), with a named volume (`my-volume`) for data and a bind mount for live code editing.
 
 ## Build
+
 ```bash
-docker build -t my-devops-app .
+docker build -t my-image .
 ```
 
 ## Run
-```bash
-docker run -d -p 8080:80 --name my-web my-devops-app
+```
+docker network create my-network
+docker run -d --name my-db --network my-network -v my-volume:/data redis:alpine
+docker run -d --name my-container --network my-network -p 5000:5000 -v "${PWD}:/app" my-image
 ```
 
 ## Verify
-* http://localhost:8080
-* Enter container: docker exec -it my-web /bin/sh
 
-## Screenshots
-![Browser](./Screenshots/Br.png)
-![Bash](./Screenshots/bash.png)
+* Network: open http://localhost:5000 — the visits counter increments, proving my-container resolves my-db by name
+* Persistence:
+  ```
+  docker exec -it my-db redis-cli SAVE
+  docker exec -it my-db redis-cli GET visits
+  docker rm -f my-db
+  docker run -d --name my-db --network my-network -v my-volume:/data redis:alpine
+  docker exec -it my-db redis-cli GET visits
+  ```
+  value should match — data survives container removal
+ * Live edit: change app.py on host, refresh the browser — no rebuild, no restart
