@@ -1,32 +1,31 @@
-# DevOps Lab 1 — Dockerized Nginx App
+# DevOps Lab 2 — Volumes & Networks
 
-## Files
-
-* `Dockerfile`
-* `index.html`
-* `commands.txt`
-
-## Dockerfile
-
-```dockerfile
-FROM nginx:alpine
-COPY index.html /usr/share/nginx/html/
-```
+Nginx app (`web`) connects to Redis (`db`) by container name over a custom network (`app-net`), with a named volume (`db_data`) for data and a bind mount for live code editing.
 
 ## Build
+
 ```bash
-docker build -t my-devops-app .
+docker build -t my-image .
 ```
 
 ## Run
-```bash
-docker run -d -p 8080:80 --name my-web my-devops-app
+```
+docker network create app-net
+docker run -d --name db --network app-net -v db_data:/data redis:alpine
+docker run -d --name web --network app-net -p 8080:80 -v ${PWD}:/usr/share/nginx/html nginx:alpine
 ```
 
 ## Verify
-* http://localhost:8080
-* Enter container: docker exec -it my-web /bin/sh
 
-## Screenshots
-![Browser](./Screenshots/Br.png)
-![Bash](./Screenshots/bash.png)
+- Network: open http://localhost:8080 and run `docker exec -it web ping -c 3 db` — proving `web` resolves `db` by name
+- Persistence:
+  ```
+  docker exec -it db redis-cli SET test "hello"
+  docker exec -it db redis-cli SAVE
+  docker exec -it db redis-cli GET test
+  docker rm -f db
+  docker run -d --name db --network app-net -v db_data:/data redis:alpine
+  docker exec -it db redis-cli GET test
+  ```
+value should match — data survives container removal
+- Live edit: change `index.html` on host, refresh the browser — no rebuild, no restart
