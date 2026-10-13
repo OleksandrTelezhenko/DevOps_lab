@@ -55,5 +55,6 @@ docker images | Select-String "myapp-"
 **Expected result:** `myapp-multi` should be significantly smaller than `myapp-single` because it uses an Alpine-based runtime image and excludes unnecessary build dependencies and files from the final image.
 
 ## Screenshots
-![Browser](./Screenshots/Br.png)
-![Bash](./Screenshots/bash.png)
+(./Screenshots/2.png)
+(./Screenshots/1.png)
+(./Screenshots/3.png)
