@@ -1,31 +1,58 @@
-# DevOps Lab 1 — Dockerized Nginx App
+# DevOps Lab 3 — Docker Compose & Multi-stage Builds
 
-## Files
+Nginx app (`web`) connects to PostgreSQL (`db`) via Docker Compose with a named volume (`db_data`) and a bind mount. Multi-stage builds compare Node.js image sizes.
 
-* `Dockerfile`
-* `index.html`
-* `commands.txt`
+## Build & Run Compose
 
-## Dockerfile
+```yaml
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
-```dockerfile
-FROM nginx:alpine
-COPY index.html /usr/share/nginx/html/
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./site:/usr/share/nginx/html
+    depends_on:
+      - db
+
+volumes:
+  db_data:
 ```
 
-## Build
-```bash
-docker build -t my-devops-app .
+Run the Compose stack:
+
+```powershell
+docker compose up -d
 ```
 
-## Run
-```bash
-docker run -d -p 8080:80 --name my-web my-devops-app
+## Verify Compose
+
+**Status & Network:**
+
+```powershell
+docker compose ps
+docker compose exec web ping -c 2 db
+docker compose down
 ```
 
-## Verify
-* http://localhost:8080
-* Enter container: docker exec -it my-web /bin/sh
+## Multi-stage Build
+
+Build and compare the Docker images:
+
+```powershell
+docker build -f Dockerfile.single -t myapp-single .
+docker build -f Dockerfile.multi -t myapp-multi .
+docker images | Select-String "myapp-"
+```
+
+**Expected result:** `myapp-multi` should be significantly smaller than `myapp-single` because it uses an Alpine-based runtime image and excludes unnecessary build dependencies and files from the final image.
 
 ## Screenshots
 ![Browser](./Screenshots/Br.png)
