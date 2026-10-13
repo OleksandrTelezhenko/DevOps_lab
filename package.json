@@ -1,0 +1,8 @@
+{
+  "name": "lab3-app",
+  "version": "1.0.0",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "mkdir -p dist && echo 'console.log(\"Hello Node!\");' > dist/server.js"
+  }
+}
