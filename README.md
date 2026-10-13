@@ -1,31 +1,57 @@
-# DevOps Lab 2 — Volumes & Networks
+# DevOps Lab 3 — Docker Compose & Multi-stage Builds
 
-Nginx app (`web`) connects to Redis (`db`) by container name over a custom network (`app-net`), with a named volume (`db_data`) for data and a bind mount for live code editing.
+Nginx app (`web`) connects to PostgreSQL (`db`) via Docker Compose with a named volume (`db_data`) and a bind mount. Multi-stage builds compare Node.js image sizes.
 
-## Build
+## Build & Run Compose
 
-```bash
-docker build -t my-image .
+```yaml
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./site:/usr/share/nginx/html
+    depends_on:
+      - db
+
+volumes:
+  db_data:
 ```
 
-## Run
-```
-docker network create app-net
-docker run -d --name db --network app-net -v db_data:/data redis:alpine
-docker run -d --name web --network app-net -p 8080:80 -v ${PWD}:/usr/share/nginx/html nginx:alpine
+Run the Compose stack:
+
+```powershell
+docker compose up -d
 ```
 
-## Verify
+## Verify Compose
 
-- Network: open http://localhost:8080 and run `docker exec -it web ping -c 3 db` — proving `web` resolves `db` by name
-- Persistence:
-  ```
-  docker exec -it db redis-cli SET test "hello"
-  docker exec -it db redis-cli SAVE
-  docker exec -it db redis-cli GET test
-  docker rm -f db
-  docker run -d --name db --network app-net -v db_data:/data redis:alpine
-  docker exec -it db redis-cli GET test
-  ```
-value should match — data survives container removal
-- Live edit: change `index.html` on host, refresh the browser — no rebuild, no restart
+**Status & Network:**
+
+```powershell
+docker compose ps
+docker compose exec web ping -c 2 db
+docker compose down
+```
+
+## Multi-stage Build
+
+Build and compare the Docker images:
+
+```powershell
+docker build -f Dockerfile.single -t myapp-single .
+docker build -f Dockerfile.multi -t myapp-multi .
+docker images | Select-String "myapp-"
+```
+
+**Expected result:** `myapp-multi` should be significantly smaller than `myapp-single` because it uses an Alpine-based runtime image and excludes unnecessary build dependencies and files from the final image.
+
+## Screenshots
